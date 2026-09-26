@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="GeoLocate Tracker — real-time IP intelligence and approximate geolocation."
+    >
+
+    <title>GeoLocate Tracker</title>
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIINfQ3L3KxvJ7r3jF0g9xH8uY2dV5u7k="
+        crossorigin=""
+    >
+
+    <link
+        rel="stylesheet"
+        href="/css/styles.css"
+    >
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-mark" aria-hidden="true">G</div>
+
+            <div>
+                <h1>GeoLocate Tracker</h1>
+                <p>IP Intelligence &amp; Approximate Geolocation</p>
+            </div>
+        </div>
+
+        <div class="header-status">
+            <span id="apiStatusDot" class="status-dot"></span>
+            <span id="apiStatusText">Checking API</span>
+            <span class="provider-badge" id="providerBadge">
+                Provider — 
+            </span>
+        </div>
+    </header>
+
+    <main class="page">
+        <section class="hero">
+            <div>
+                <span class="eyebrow">REAL-TIME IP LOOKUP</span>
+                <h2>Explore an IP's approximate geographic position.</h2>
+                <p>
+                    Resolve IPv4 and IPv6 addresses through a configured
+                    GeoIP provider and visualize the provider's estimated
+                    location on an interactive map.
+                </p>
+            </div>
+
+            <div class="hero-note">
+                <strong>Privacy-aware by design</strong>
+                <span>
+                    No browser GPS is used and provider credentials never
+                    reach the browser.
+                </span>
+            </div>
+        </section>
+
+        <section class="search-card">
+            <form id="lookupForm" novalidate>
+                <label for="ipInput">IP address</label>
+
+                <div class="search-row">
+                    <input
+                        id="ipInput"
+                        name="ip"
+                        type="text"
+                        inputmode="text"
+                        autocomplete="off"
+                        spellcheck="false"
+                        placeholder="Enter an IPv4 or IPv6 address"
+                        aria-describedby="inputHint inputError"
+                    >
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        id="lookupButton"
+                    >
+                        <span>Locate IP</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        id="detectButton"
+                    >
+                        Detect My IP
+                    </button>
+                </div>
+
+                <div class="form-meta">
+                    <span id="inputHint">
+                        Example: 8.8.8.8
+                    </span>
+
+                    <span
+                        id="inputError"
+                        class="field-error"
+                        role="alert"
+                    ></span>
+                </div>
+            </form>
+        </section>
+
+        <div
+            id="globalError"
+            class="alert alert-danger hidden"
+            role="alert"
+        ></div>
+
+        <section id="emptyState" class="empty-state">
+            <div class="empty-icon" aria-hidden="true">◎</div>
+            <h3>Ready to explore</h3>
+            <p>
+                Enter an IP address to explore its approximate geographic
+                location.
+            </p>
+        </section>
+
+        <section
+            id="results"
+            class="results hidden"
+            aria-live="polite"
+        >
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">GEOIP RESULT</span>
+                    <h2>Location intelligence</h2>
+                </div>
+
+                <div class="lookup-time">
+                    <span>Last lookup</span>
+                    <strong id="lastLookup">—</strong>
+                </div>
+            </div>
+
+            <div class="stat-grid">
+                <article class="stat-card">
+                    <span class="stat-label">IP ADDRESS</span>
+                    <strong id="statIp">—</strong>
+                    <span id="statVersion">—</span>
+                </article>
+
+                <article class="stat-card">
+                    <span class="stat-label">LOCATION</span>
+                    <strong id="statLocation">—</strong>
+                    <span id="statCountry">—</span>
+                </article>
+
+                <article class="stat-card">
+                    <span class="stat-label">COORDINATES</span>
+                    <strong id="statCoordinates">—</strong>
+                    <span>Estimated position</span>
+                </article>
+
+                <article class="stat-card">
+                    <span class="stat-label">TIMEZONE</span>
+                    <strong id="statTimezone">—</strong>
+                    <span>Provider data</span>
+                </article>
+
+                <article class="stat-card">
+                    <span class="stat-label">NETWORK</span>
+                    <strong id="statNetwork">—</strong>
+                    <span id="statAsn">—</span>
+                </article>
+
+                <article class="stat-card">
+                    <span class="stat-label">ACCURACY</span>
+                    <strong id="statAccuracy">—</strong>
+                    <span>Estimated radius</span>
+                </article>
+            </div>
+
+            <div class="main-grid">
+                <section class="map-card">
+                    <div class="card-heading">
+                        <div>
+                            <h3>Approximate location</h3>
+                            <p>IP-derived geographic estimate</p>
+                        </div>
+
+                        <span
+                            class="live-pill"
+                            id="mapStatus"
+                        >
+                            READY
+                        </span>
+                    </div>
+
+                    <div
+                        id="map"
+                        class="map"
+                        role="application"
+                        aria-label="Approximate IP location map"
+                    ></div>
+                </section>
+
+                <aside class="details-card">
+                    <div class="card-heading">
+                        <div>
+                            <h3>Details</h3>
+                            <p>Normalized provider response</p>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>LOCATION</h4>
+
+                        <div class="detail-row">
+                            <span>Country</span>
+                            <strong id="detailCountry">—</strong>
+                        </div>
+
+                        <div class="detail-row">
+                            <span>Region</span>
+                            <strong id="detailRegion">—</strong>
+                        </div>
+
+                        <div class="detail-row">
+                            <span>City</span>
+                            <strong id="detailCity">—</strong>
+                        </div>
+
+                        <div class="detail-row">
+                            <span>Postal code</span>
+                            <strong id="detailPostal">—</strong>
+                        </div>
+
+                        <div class="detail-row">
+                            <span>Coordinates</span>
+                            <strong id="detailCoordinates">—</strong>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>NETWORK</h4>
+
+                        <div class="detail-row">
+                            <span>ISP</span>
+                            <strong id="detailIsp">—</strong>
+                        </div>
+
+                        <div class="detail-row">
+                            <span>Organization</span>
+                            <strong id="detailOrg">—</strong>
+                        </div>
+
+                        <div class="detail-row">
+                            <span>ASN</span>
+                            <strong id="detailAsn">—</strong>
+                        </div>
+
+                        <div class="detail-row">
+                            <span>IP version</span>
+                            <strong id="detailVersion">—</strong>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>PRIVACY / NETWORK SIGNALS</h4>
+
+                        <div class="indicator-grid">
+                            <div class="indicator">
+                                <span>VPN</span>
+                                <strong id="indicatorVpn">—</strong>
+                            </div>
+
+                            <div class="indicator">
+                                <span>Proxy</span>
+                                <strong id="indicatorProxy">—</strong>
+                            </div>
+
+                            <div class="indicator">
+                                <span>Tor</span>
+                                <strong id="indicatorTor">—</strong>
+                            </div>
+
+                            <div class="indicator">
+                                <span>Hosting</span>
+                                <strong id="indicatorHosting">—</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>TIME / ACCURACY</h4>
+
+                        <div class="detail-row">
+                            <span>Timezone</span>
+                            <strong id="detailTimezone">—</strong>
+                        </div>
+
+                        <div class="detail-row">
+                            <span>Accuracy radius</span>
+                            <strong id="detailAccuracy">—</strong>
+                        </div>
+
+                        <div class="detail-row">
+                            <span>Provider</span>
+                            <strong id="detailProvider">—</strong>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+
+            <section class="limitations-card">
+                <div class="warning-icon" aria-hidden="true">!</div>
+
+                <div>
+                    <strong>Important geolocation limitation</strong>
+
+                    <p>
+                        IP geolocation provides an approximate geographic
+                        location. It does not identify a user's exact address
+                        or physical position.
+                    </p>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div>
+            <strong>GeoLocate Tracker</strong>
+            <span>Real-time IP lookup, not physical tracking.</span>
+        </div>
+
+        <div>
+            Map data:
+            <a
+                href="https://www.openstreetmap.org/copyright"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                © OpenStreetMap contributors
+            </a>
+        </div>
+    </footer>
+
+    <div
+        id="loadingOverlay"
+        class="loading-overlay hidden"
+        role="status"
+        aria-live="polite"
+    >
+        <div class="spinner"></div>
+        <strong>Resolving IP location...</strong>
+        <span>Contacting the configured GeoIP provider.</span>
+    </div>
+
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""
+    ></script>
+
+    <script type="module" src="/js/app.js"></script>
+</body>
+</html>
