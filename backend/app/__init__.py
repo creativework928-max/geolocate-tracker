@@ -1,0 +1,1 @@
+"""GeoLocate Tracker backend application."""
