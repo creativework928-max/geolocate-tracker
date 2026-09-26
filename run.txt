@@ -1,0 +1,18 @@
+py -3.14 -m venv .venv
+
+.\.venv\Scripts\Activate.ps1
+
+pip install -r backend/requirements.txt
+
+for run the project:
+uvicorn app.main:app --app-dir backend --reload
+
+for test the model:
+2001:4860:4860::8888
+8.8.8.8
+and so on...
+
+
+Chatgpt:
+1. https://chatgpt.com/share/6ab228ed-1b10-83ea-95c9-6c1c29c10806
+2. https://chatgpt.com/share/6ab22919-3c5c-83ea-bd1f-fe079a3cf3f7
